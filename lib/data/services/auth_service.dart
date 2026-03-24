@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:tictactoe/data/models/user_model.dart';
 
 class AuthService {
@@ -96,5 +99,27 @@ class AuthService {
       // ola
     }
     return null;
+  }
+
+  Future<String?> uploadPfp(String uid, File imageFile) async {
+    try {
+      Reference ref = FirebaseStorage.instance
+          .ref()
+          .child('pfps')
+          .child('$uid.jpg');
+
+      UploadTask uploadTask = ref.putFile(imageFile);
+      TaskSnapshot snapshot = await uploadTask;
+
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'pfpUrl': downloadUrl,
+      });
+
+      return downloadUrl;
+    } catch (e) {
+      return null;
+    }
   }
 }

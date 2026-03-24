@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tictactoe/data/models/user_model.dart';
 import 'package:tictactoe/data/services/auth_service.dart';
@@ -47,5 +51,24 @@ class AuthController extends ChangeNotifier {
       _user = user;
       notifyListeners();
     }
+  }
+
+  Future<bool> updatePfp(File imageFile) async {
+    if (_user == null) return false;
+
+    String? newImageUrl = await _authService.uploadPfp(_user!.uid, imageFile);
+
+    if (newImageUrl != null) {
+      _user = UserModel(
+        uid: _user!.uid,
+        username: _user!.username,
+        email: _user!.email,
+        pfpUrl: newImageUrl,
+      );
+
+      notifyListeners();
+      return true;
+    }
+    return false;
   }
 }
