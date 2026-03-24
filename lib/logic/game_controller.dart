@@ -12,11 +12,15 @@ class GameController extends ChangeNotifier {
 
   GameModel? get currentGame => _currentGame;
 
-  Future<void> createRoom(String roomCode, String userId) async {
+  Future<void> createRoom(
+    String roomCode,
+    String userId,
+    String gamemode,
+  ) async {
     final newRoom = GameModel(
       id: roomCode,
       xPlayer: userId,
-      gamemode: 'normal',
+      gamemode: gamemode,
     );
 
     await _firestore.collection('games').doc(roomCode).set({
@@ -71,6 +75,9 @@ class GameController extends ChangeNotifier {
             );
 
             notifyListeners();
+          } else {
+            _currentGame = null;
+            notifyListeners();
           }
         });
   }
@@ -111,6 +118,30 @@ class GameController extends ChangeNotifier {
       'o_queue': _currentGame!.oQueue,
       'turn': nextTurn,
     });
+
+    if (newState == 'finished') {
+      await _firestore.collection('history').add({
+        'room_id': _currentGame!.id,
+        'x_player': _currentGame!.xPlayer,
+        'o_player': _currentGame!.oPlayer,
+        'gamemode': _currentGame!.gamemode,
+        'winner': winner,
+        'final_board': _currentGame!.board,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  Future<void> exitAndCleanRoom() async {
+    if (_currentGame == null) return;
+
+    String roomId = _currentGame!.id;
+
+    _gameSubscription?.cancel();
+    await _firestore.collection('games').doc(roomId).delete();
+
+    _currentGame = null;
+    notifyListeners();
   }
 
   bool _win(List<String> board, String shape) {

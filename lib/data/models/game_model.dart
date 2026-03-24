@@ -3,7 +3,7 @@ class GameModel {
   final String xPlayer;
   final String oPlayer;
   final String state; // 'waiting', 'playing' o 'finished'
-  final String gamemode;
+  final String gamemode; // 'normal' o 'infinite'
   final String turn; // 'x' o 'o'
   final String winner; // 'x', 'o' o 'draw'
   List<String> board;
@@ -63,8 +63,16 @@ class GameModel {
 
     if (player == 'x') {
       xQueue.add(index);
+      if (gamemode == 'infinite' && xQueue.length > 3) {
+        int oldestIndex = xQueue.removeAt(0);
+        board[oldestIndex] = '';
+      }
     } else {
       oQueue.add(index);
+      if (gamemode == 'infinite' && oQueue.length > 3) {
+        int oldestIndex = oQueue.removeAt(0);
+        board[oldestIndex] = '';
+      }
     }
   }
 }
