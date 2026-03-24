@@ -53,4 +53,18 @@ class GameModel {
       'o_queue': oQueue,
     };
   }
+
+  // agregar movimiento a la cola de cada jugador
+  void registerMove(int index, String player) {
+    if (board[index] != '') return;
+
+    // colocar figura en el índice
+    board[index] = player;
+
+    if (player == 'x') {
+      xQueue.add(index);
+    } else {
+      oQueue.add(index);
+    }
+  }
 }
