@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:tictactoe/logic/auth_controller.dart';
 import 'package:tictactoe/logic/game_controller.dart';
 import 'package:tictactoe/ui/screens/results_screen.dart';
-
 
 class _GC {
   static const bg = Color(0xFFE6E6E6);
@@ -22,16 +21,8 @@ class _GC {
 class GameScreen extends StatefulWidget {
   final String roomCode;
   final String gameMode;
-  final File? playerPhoto;
-  final String opponentName;
 
-  const GameScreen({
-    super.key,
-    required this.roomCode,
-    required this.gameMode,
-    this.playerPhoto,
-    this.opponentName = 'Oponente',
-  });
+  const GameScreen({super.key, required this.roomCode, required this.gameMode});
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -47,10 +38,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     for (int i = 0; i < 9; i++) {
-      _cellAnims.add(AnimationController(
-        duration: const Duration(milliseconds: 400),
-        vsync: this,
-      ));
+      _cellAnims.add(
+        AnimationController(
+          duration: const Duration(milliseconds: 400),
+          vsync: this,
+        ),
+      );
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<GameController>().addListener(_onGameChanged);
@@ -59,7 +52,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   void _onGameChanged() {
     final game = context.read<GameController>().currentGame;
-    if (game == null) return;
+
+    if (game == null) {
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
 
     final board = game.board;
     for (int i = 0; i < min(9, board.length); i++) {
@@ -81,9 +80,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   List<int>? _findWinLine(List<String> board, String w) {
     const wins = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8],
-      [0, 3, 6], [1, 4, 7], [2, 5, 8],
-      [0, 4, 8], [2, 4, 6],
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
     ];
     for (var p in wins) {
       if (p.every((i) => i < board.length && board[i] == w)) return p;
@@ -107,13 +111,15 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       result = 'lose';
     }
 
-    Navigator.of(context).pushReplacement(MaterialPageRoute(
-      builder: (_) => ResultsScreen(
-        result: result,
-        playerName: auth.currentUser?.username ?? 'Jugador 1',
-        opponentName: widget.opponentName,
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => ResultsScreen(
+          result: result,
+          playerName: auth.currentUser?.username ?? 'Jugador 1',
+          opponentName: 'aa', //TODO: agregar nombre oponente
+        ),
       ),
-    ));
+    );
   }
 
   Future<void> _onCellTap(int index) async {
@@ -123,23 +129,39 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     final board = game.board;
     if (index >= board.length || board[index].isNotEmpty) return;
 
-    final currentPlayer = game.turn == 'x' ? game.xPlayer : game.oPlayer;
+    final auth = context.read<AuthController>();
+    final userId = auth.currentUser?.uid ?? '';
+
+    if (userId != game.xPlayer && userId != game.oPlayer) return;
+
+    final isMyTurn =
+        (game.turn == 'x' && game.xPlayer == userId) ||
+        (game.turn == 'o' && game.oPlayer == userId);
+
+    if (!isMyTurn) return;
 
     if (widget.gameMode == 'math') {
       final correct = await _showMathChallenge();
       if (!correct && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('\u00A1Respuesta incorrecta! Turno perdido.',
-              style: GoogleFonts.inter(color: Colors.white)),
-          backgroundColor: _GC.accentPink,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '\u00A1Respuesta incorrecta! Turno perdido.',
+              style: GoogleFonts.inter(color: Colors.white),
+            ),
+            backgroundColor: _GC.accentPink,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        await context.read<GameController>().passTurn();
         return;
       }
     }
 
-    await context.read<GameController>().makeMove(index, currentPlayer);
+    await context.read<GameController>().makeMove(index, userId);
   }
 
   Future<bool> _showMathChallenge() async {
@@ -171,64 +193,89 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: _GC.btnColor.withAlpha(20),
-              borderRadius: BorderRadius.circular(12),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _GC.btnColor.withAlpha(20),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.calculate_rounded,
+                color: _GC.btnColor,
+                size: 24,
+              ),
             ),
-            child: const Icon(Icons.calculate_rounded,
-                color: _GC.btnColor, size: 24),
-          ),
-          const SizedBox(width: 10),
-          Text('\u00A1Reto Matem\u00E1tico!',
+            const SizedBox(width: 10),
+            Text(
+              '\u00A1Reto Matem\u00E1tico!',
               style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: _GC.onSurface)),
-        ]),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-            decoration: BoxDecoration(
-              color: _GC.bg,
-              borderRadius: BorderRadius.circular(16),
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: _GC.onSurface,
+              ),
             ),
-            child: Text('$a $sym $b = ?',
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+              decoration: BoxDecoration(
+                color: _GC.bg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                '$a $sym $b = ?',
                 style: GoogleFonts.inter(
-                    fontSize: 36,
-                    color: _GC.onSurface,
-                    fontWeight: FontWeight.bold)),
-          ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: ctrl,
-            keyboardType: TextInputType.number,
-            autofocus: true,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-                color: _GC.onSurface, fontSize: 24, fontWeight: FontWeight.w600),
-            decoration: InputDecoration(
-              hintText: '...',
-              hintStyle: GoogleFonts.inter(color: _GC.onSurfaceVar, fontSize: 24),
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none),
-              focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: _GC.btnColor, width: 2)),
+                  fontSize: 36,
+                  color: _GC.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text('\u00A1Solo tienes un intento!',
+            const SizedBox(height: 20),
+            TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              textAlign: TextAlign.center,
               style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: _GC.accentPink,
-                  fontWeight: FontWeight.w500)),
-        ]),
+                color: _GC.onSurface,
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                hintText: '...',
+                hintStyle: GoogleFonts.inter(
+                  color: _GC.onSurfaceVar,
+                  fontSize: 24,
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: _GC.btnColor, width: 2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '\u00A1Solo tienes un intento!',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: _GC.accentPink,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
         actions: [
           GestureDetector(
             onTap: () {
@@ -243,11 +290,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
-                child: Text('Responder',
-                    style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white)),
+                child: Text(
+                  'Responder',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ),
@@ -268,12 +318,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         c.reset();
       }
     });
-    context.read<GameController>().startLocalGame(
-          game.id,
-          game.xPlayer,
-          game.oPlayer,
-          game.gamemode,
-        );
+    context.read<GameController>().startGame();
   }
 
   @override
@@ -292,55 +337,81 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthController>();
-    final playerName = auth.currentUser?.username ?? 'Jugador 1';
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          Container(color: _GC.bg),
-          Positioned.fill(child: CustomPaint(painter: _GameBgPainter())),
-          SafeArea(
-            child: Consumer<GameController>(builder: (context, gameCtrl, _) {
-              final game = gameCtrl.currentGame;
-              if (game == null) {
-                return const Center(
-                    child: CircularProgressIndicator(color: _GC.primary));
-              }
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        await _showExitDialog();
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Container(color: _GC.bg),
+            Positioned.fill(child: CustomPaint(painter: _GameBgPainter())),
+            SafeArea(
+              child: Consumer<GameController>(
+                builder: (context, gameCtrl, _) {
+                  final game = gameCtrl.currentGame;
+                  if (game == null) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: _GC.primary),
+                    );
+                  }
 
-              final userId = auth.currentUser?.uid ?? '';
-              final isX = game.xPlayer == userId;
-              final isXTurn = game.turn == 'x';
-              final board = game.board.length >= 9
-                  ? game.board
-                  : List<String>.filled(9, '');
+                  final userId = auth.currentUser?.uid ?? '';
+                  final isX = game.xPlayer == userId;
+                  final isXTurn = game.turn == 'x';
+                  final board = game.board.length >= 9
+                      ? game.board
+                      : List<String>.filled(9, '');
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 6),
-                    _buildPlayers(playerName, widget.opponentName, isX, isXTurn),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: Center(
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: _buildBoard(board),
+                  final xPhoto = gameCtrl.xPlayerPfpUrl;
+                  final oPhoto = gameCtrl.oPlayerPfpUrl;
+                  final xName = gameCtrl.xPlayerName;
+                  final oName = gameCtrl.oPlayerName;
+
+                  final p1Photo = isX ? xPhoto : oPhoto;
+                  final p2Photo = isX ? oPhoto : xPhoto;
+                  final p1Name = isX ? xName : oName;
+                  final p2Name = isX ? oName : xName;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _buildHeader(),
+                        const SizedBox(height: 6),
+                        _buildPlayers(
+                          p1Name,
+                          p2Name,
+                          isX,
+                          isXTurn,
+                          p1Photo,
+                          p2Photo,
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: Center(
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: _buildBoard(board),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildModeBadge(),
+                        const SizedBox(height: 10),
+                        _buildRestartButton(),
+                        const SizedBox(height: 14),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    _buildModeBadge(),
-                    const SizedBox(height: 10),
-                    _buildRestartButton(),
-                    const SizedBox(height: 14),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -351,7 +422,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
+            onTap: _showExitDialog,
             child: Container(
               width: 40,
               height: 40,
@@ -359,8 +430,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 shape: BoxShape.circle,
                 color: Colors.transparent,
               ),
-              child: const Icon(Icons.arrow_back_rounded,
-                  color: _GC.onSurface, size: 28),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: _GC.onSurface,
+                size: 28,
+              ),
             ),
           ),
         ],
@@ -369,16 +443,24 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildPlayers(
-      String p1Name, String p2Name, bool p1IsX, bool isXTurn) {
+    String p1Name,
+    String p2Name,
+    bool p1IsX,
+    bool isXTurn,
+    String? p1Photo,
+    String? p2Photo,
+  ) {
     return Row(
       children: [
         Expanded(
-            child: _playerCard(
-                p1Name,
-                p1IsX ? 'X' : 'O',
-                p1IsX ? _GC.primary : _GC.accentPink,
-                widget.playerPhoto,
-                p1IsX == isXTurn)),
+          child: _playerCard(
+            p1Name,
+            p1IsX ? 'X' : 'O',
+            p1IsX ? _GC.primary : _GC.accentPink,
+            p1Photo,
+            p1IsX == isXTurn,
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Container(
@@ -389,34 +471,45 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               color: Colors.white.withAlpha(153),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withAlpha(8),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2)),
+                  color: Colors.black.withAlpha(8),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Center(
-              child: Text('VS',
-                  style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
-                      color: _GC.onSurfaceVar)),
+              child: Text(
+                'VS',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  color: _GC.onSurfaceVar,
+                ),
+              ),
             ),
           ),
         ),
         Expanded(
-            child: _playerCard(
-                p2Name,
-                p1IsX ? 'O' : 'X',
-                p1IsX ? _GC.accentPink : _GC.primary,
-                null,
-                p1IsX != isXTurn)),
+          child: _playerCard(
+            p2Name,
+            p1IsX ? 'O' : 'X',
+            p1IsX ? _GC.accentPink : _GC.primary,
+            p2Photo,
+            p1IsX != isXTurn,
+          ),
+        ),
       ],
     );
   }
 
   Widget _playerCard(
-      String name, String symbol, Color color, File? photo, bool active) {
+    String name,
+    String symbol,
+    Color color,
+    String? photoUrl,
+    bool active,
+  ) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
@@ -443,46 +536,60 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   border: Border.all(color: color, width: 2),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withAlpha(10),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2)),
+                      color: Colors.black.withAlpha(10),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
-                  image: photo != null
+                  image: photoUrl != null
                       ? DecorationImage(
-                          image: FileImage(photo), fit: BoxFit.cover)
+                          image: MemoryImage(base64Decode(photoUrl)),
+                          fit: BoxFit.cover,
+                        )
                       : null,
                 ),
-                child: photo == null
-                    ? Icon(Icons.person_rounded,
-                        color: Colors.grey.shade300, size: 30)
+                child: photoUrl == null
+                    ? Icon(
+                        Icons.person_rounded,
+                        color: Colors.grey.shade300,
+                        size: 30,
+                      )
                     : null,
               ),
               Positioned(
                 bottom: -3,
                 right: -3,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(symbol,
-                      style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white)),
+                  child: Text(
+                    symbol,
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(name,
-              style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: _GC.onSurface),
-              overflow: TextOverflow.ellipsis),
+          Text(
+            name,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: _GC.onSurface,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
@@ -517,24 +624,23 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isWin
-              ? _GC.accentGreen.withAlpha(50)
-              : Colors.white,
-          border: isWin
-              ? Border.all(color: _GC.accentGreen, width: 2.5)
-              : null,
+          color: isWin ? _GC.accentGreen.withAlpha(50) : Colors.white,
+          border: isWin ? Border.all(color: _GC.accentGreen, width: 2.5) : null,
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withAlpha(10),
-                blurRadius: 6,
-                offset: const Offset(0, 2)),
+              color: Colors.black.withAlpha(10),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: Center(
           child: value.isNotEmpty
               ? ScaleTransition(
                   scale: CurvedAnimation(
-                      parent: _cellAnims[index], curve: Curves.elasticOut),
+                    parent: _cellAnims[index],
+                    curve: Curves.elasticOut,
+                  ),
                   child: _mark(value),
                 )
               : null,
@@ -546,13 +652,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   Widget _mark(String player) {
     final isX = player == 'x';
     final color = isX ? _GC.primary : _GC.accentPink;
-    final auth = context.read<AuthController>();
-    final userId = auth.currentUser?.uid ?? '';
-    final game = context.read<GameController>().currentGame;
-    final isMine = (isX && game?.xPlayer == userId) ||
-        (!isX && game?.oPlayer == userId);
+    final gameCtrl = context.read<GameController>();
+    final photoUrl = isX ? gameCtrl.xPlayerPfpUrl : gameCtrl.oPlayerPfpUrl;
 
-    if (isMine && widget.playerPhoto != null) {
+    if (photoUrl != null) {
       return Container(
         width: 48,
         height: 48,
@@ -560,7 +663,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           shape: BoxShape.circle,
           border: Border.all(color: color, width: 2.5),
           image: DecorationImage(
-              image: FileImage(widget.playerPhoto!), fit: BoxFit.cover),
+            image: MemoryImage(base64Decode(photoUrl)),
+            fit: BoxFit.cover,
+          ),
         ),
       );
     }
@@ -573,6 +678,45 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         fontWeight: FontWeight.w700,
       ),
     );
+  }
+
+  Future<void> _showExitDialog() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadiusGeometry.circular(24),
+        ),
+        title: Text(
+          '¿Salir de la partida?',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.bold,
+            color: _GC.onSurface,
+          ),
+        ),
+        content: Text(
+          'La sala se cerrará para ambos jugadores.',
+          style: GoogleFonts.inter(color: _GC.onSurfaceVar),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              'Salir',
+              style: GoogleFonts.inter(
+                color: _GC.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      await context.read<GameController>().exitAndCleanRoom();
+      if (mounted) Navigator.of(context).pop();
+    }
   }
 
   Widget _buildModeBadge() {
@@ -600,11 +744,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         children: [
           Icon(icon, color: _GC.onSurfaceVar, size: 18),
           const SizedBox(width: 6),
-          Text(label,
-              style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: _GC.onSurfaceVar)),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: _GC.onSurfaceVar,
+            ),
+          ),
         ],
       ),
     );
@@ -621,17 +768,21 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withAlpha(25),
-                blurRadius: 16,
-                offset: const Offset(0, 6)),
+              color: Colors.black.withAlpha(25),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
           ],
         ),
         child: Center(
-          child: Text('Reiniciar Partida',
-              style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white)),
+          child: Text(
+            'Reiniciar Partida',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
         ),
       ),
     );

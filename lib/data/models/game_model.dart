@@ -21,7 +21,7 @@ class GameModel {
     List<String>? board,
     List<int>? xQueue,
     List<int>? oQueue,
-  }) : board = board ?? List.filled(0, ''),
+  }) : board = board ?? List.filled(9, ''),
        xQueue = xQueue ?? [],
        oQueue = oQueue ?? [];
 

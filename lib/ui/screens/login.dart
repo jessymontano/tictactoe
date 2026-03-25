@@ -127,6 +127,30 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                         const SizedBox(height: 24),
+                        Text(
+                          'Arce Gaxiola Angel Eduardo',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.white.withAlpha(90),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Montaño Lares Jessica',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.white.withAlpha(90),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Valencia Valenzuela Frida Sofía',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.white.withAlpha(90),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
                       ],
                     ),
                   ),
@@ -154,7 +178,11 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ],
       ),
-      child: const Icon(Icons.grid_3x3_rounded, color: AppColors.accent, size: 28),
+      child: const Icon(
+        Icons.grid_3x3_rounded,
+        color: AppColors.accent,
+        size: 28,
+      ),
     );
   }
 
@@ -177,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen>
         child: Image.asset(
           'assets/images/logo_unison.png',
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
+          errorBuilder: (_, _, _) => Container(
             color: AppColors.backgroundMid,
             child: const Icon(Icons.school, size: 52, color: AppColors.accent),
           ),
@@ -210,15 +238,22 @@ class _LoginScreenState extends State<LoginScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white)),
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle,
-                    style: GoogleFonts.inter(
-                        fontSize: 12, color: Colors.white.withAlpha(140))),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.white.withAlpha(140),
+                  ),
+                ),
               ],
             ),
           ),
@@ -247,14 +282,20 @@ class _LoginScreenState extends State<LoginScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Iniciar Gato',
-                style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.backgroundDark)),
+            Text(
+              'Iniciar Gato',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.backgroundDark,
+              ),
+            ),
             const SizedBox(width: 8),
-            Icon(Icons.grid_3x3_rounded,
-                color: AppColors.backgroundDark, size: 20),
+            Icon(
+              Icons.grid_3x3_rounded,
+              color: AppColors.backgroundDark,
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -294,8 +335,7 @@ class _AuthSheetState extends State<_AuthSheet> {
     setState(() => _isLoading = true);
 
     if (_isLogin) {
-      final ts = DateTime.now().millisecondsSinceEpoch;
-      await auth.register('jugador$ts@gato.app', 'gato123', 'Jugador');
+      await auth.login(_emailCtrl.text.trim(), _passCtrl.text.trim());
     } else {
       if (!_formKey.currentState!.validate()) {
         setState(() => _isLoading = false);
@@ -393,8 +433,11 @@ class _AuthSheetState extends State<_AuthSheet> {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.accent.withAlpha(60)),
           ),
-          child: const Icon(Icons.person_add_rounded,
-              color: AppColors.accent, size: 24),
+          child: const Icon(
+            Icons.person_add_rounded,
+            color: AppColors.accent,
+            size: 24,
+          ),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -552,7 +595,9 @@ class _AuthSheetState extends State<_AuthSheet> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.inter(
-                fontSize: 14, color: Colors.white.withAlpha(60)),
+              fontSize: 14,
+              color: Colors.white.withAlpha(60),
+            ),
             filled: true,
             fillColor: Colors.white.withAlpha(15),
             border: OutlineInputBorder(
@@ -575,9 +620,14 @@ class _AuthSheetState extends State<_AuthSheet> {
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: AppColors.xColor, width: 1.5),
             ),
-            errorStyle: GoogleFonts.inter(fontSize: 11, color: AppColors.xColor),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            errorStyle: GoogleFonts.inter(
+              fontSize: 11,
+              color: AppColors.xColor,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
       ],
@@ -590,8 +640,11 @@ class _AuthSheetState extends State<_AuthSheet> {
       children: [
         Row(
           children: [
-            const Icon(Icons.lock_outline_rounded,
-                color: AppColors.accent, size: 18),
+            const Icon(
+              Icons.lock_outline_rounded,
+              color: AppColors.accent,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Text(
               'Contrase\u00f1a',
@@ -612,12 +665,16 @@ class _AuthSheetState extends State<_AuthSheet> {
           decoration: InputDecoration(
             hintText: 'M\u00ednimo 6 caracteres',
             hintStyle: GoogleFonts.inter(
-                fontSize: 14, color: Colors.white.withAlpha(60)),
+              fontSize: 14,
+              color: Colors.white.withAlpha(60),
+            ),
             filled: true,
             fillColor: Colors.white.withAlpha(15),
             suffixIcon: IconButton(
               icon: Icon(
-                _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                _obscure
+                    ? Icons.visibility_off_rounded
+                    : Icons.visibility_rounded,
                 color: Colors.white.withAlpha(100),
                 size: 20,
               ),
@@ -643,9 +700,14 @@ class _AuthSheetState extends State<_AuthSheet> {
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: AppColors.xColor, width: 1.5),
             ),
-            errorStyle: GoogleFonts.inter(fontSize: 11, color: AppColors.xColor),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            errorStyle: GoogleFonts.inter(
+              fontSize: 11,
+              color: AppColors.xColor,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
       ],
@@ -675,7 +737,9 @@ class _AuthSheetState extends State<_AuthSheet> {
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2.5, color: AppColors.backgroundDark),
+                    strokeWidth: 2.5,
+                    color: AppColors.backgroundDark,
+                  ),
                 )
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -689,8 +753,11 @@ class _AuthSheetState extends State<_AuthSheet> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_rounded,
-                        color: AppColors.backgroundDark, size: 20),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: AppColors.backgroundDark,
+                      size: 20,
+                    ),
                   ],
                 ),
         ),
@@ -711,23 +778,28 @@ class _Decorations extends StatelessWidget {
     return Stack(
       children: [
         Positioned(
-          top: h * 0.15, left: -70,
+          top: h * 0.15,
+          left: -70,
           child: _ring(300, Colors.white.withAlpha(10), 1.5),
         ),
         Positioned(
-          top: h * 0.10, right: -90,
+          top: h * 0.10,
+          right: -90,
           child: _ring(340, Colors.white.withAlpha(7), 1),
         ),
         Positioned(
-          top: -50, right: -30,
+          top: -50,
+          right: -30,
           child: _blob(150, AppColors.primary.withAlpha(22)),
         ),
         Positioned(
-          bottom: 140, left: -40,
+          bottom: 140,
+          left: -40,
           child: _blob(110, AppColors.accent.withAlpha(12)),
         ),
         Positioned(
-          top: h * 0.65, right: -20,
+          top: h * 0.65,
+          right: -20,
           child: _blob(80, AppColors.oColor.withAlpha(10)),
         ),
 
@@ -739,23 +811,69 @@ class _Decorations extends StatelessWidget {
 
         // X symbols
         _icon(h * 0.22, null, null, 30, Icons.close_rounded, 44, 0.25, 0.05),
-        _icon(h * 0.60, null, w * 0.15, null, Icons.close_rounded, 36, -0.3, 0.04),
-        _icon(null, h * 0.08, null, w * 0.25, Icons.close_rounded, 28, 0.5, 0.035),
+        _icon(
+          h * 0.60,
+          null,
+          w * 0.15,
+          null,
+          Icons.close_rounded,
+          36,
+          -0.3,
+          0.04,
+        ),
+        _icon(
+          null,
+          h * 0.08,
+          null,
+          w * 0.25,
+          Icons.close_rounded,
+          28,
+          0.5,
+          0.035,
+        ),
 
         // O symbols
         _icon(h * 0.42, null, 24, null, Icons.circle_outlined, 40, 0, 0.045),
-        _icon(h * 0.70, null, null, w * 0.10, Icons.circle_outlined, 32, 0, 0.04),
-        _icon(h * 0.12, null, null, w * 0.22, Icons.circle_outlined, 24, 0, 0.03),
+        _icon(
+          h * 0.70,
+          null,
+          null,
+          w * 0.10,
+          Icons.circle_outlined,
+          32,
+          0,
+          0.04,
+        ),
+        _icon(
+          h * 0.12,
+          null,
+          null,
+          w * 0.22,
+          Icons.circle_outlined,
+          24,
+          0,
+          0.03,
+        ),
 
         // Grid grande
-        _icon(h * 0.30, null, null, w * 0.60, Icons.grid_3x3_rounded, 90, 0.15, 0.025),
+        _icon(
+          h * 0.30,
+          null,
+          null,
+          w * 0.60,
+          Icons.grid_3x3_rounded,
+          90,
+          0.15,
+          0.025,
+        ),
       ],
     );
   }
 
   Widget _ring(double size, Color color, double width) {
     return Container(
-      width: size, height: size,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: color, width: width),
@@ -765,15 +883,27 @@ class _Decorations extends StatelessWidget {
 
   Widget _blob(double size, Color color) {
     return Container(
-      width: size, height: size,
+      width: size,
+      height: size,
       decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 
-  Widget _icon(double? top, double? bottom, double? left, double? right,
-      IconData icon, double size, double angle, double opacity) {
+  Widget _icon(
+    double? top,
+    double? bottom,
+    double? left,
+    double? right,
+    IconData icon,
+    double size,
+    double angle,
+    double opacity,
+  ) {
     return Positioned(
-      top: top, bottom: bottom, left: left, right: right,
+      top: top,
+      bottom: bottom,
+      left: left,
+      right: right,
       child: Transform.rotate(
         angle: angle,
         child: Opacity(

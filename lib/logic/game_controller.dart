@@ -8,22 +8,26 @@ class GameController extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   GameModel? _currentGame;
+  String _xPlayerName = 'Cargando...';
+  String _oPlayerName = 'Esperando...';
+
+  String? _xPlayerPfpUrl;
+  String? _oPlayerPfpUrl;
+
   StreamSubscription<DocumentSnapshot>? _gameSubscription;
 
   GameModel? get currentGame => _currentGame;
+  String get xPlayerName => _xPlayerName;
+  String get oPlayerName => _oPlayerName;
+  String? get xPlayerPfpUrl => _xPlayerPfpUrl;
+  String? get oPlayerPfpUrl => _oPlayerPfpUrl;
 
-  void startLocalGame(
-      String roomCode, String xPlayer, String oPlayer, String gameMode) {
-    _gameSubscription?.cancel();
-    _currentGame = GameModel(
-      id: roomCode,
-      xPlayer: xPlayer,
-      oPlayer: oPlayer,
-      state: 'playing',
-      gamemode: gameMode,
-      board: List.filled(9, ''),
-    );
-    notifyListeners();
+  Future<void> startGame() async {
+    if (_currentGame == null) return;
+
+    await _firestore.collection('games').doc(_currentGame!.id).update({
+      'state': 'playing',
+    });
   }
 
   Future<void> createRoom(
@@ -43,7 +47,7 @@ class GameController extends ChangeNotifier {
       'state': newRoom.state,
       'gamemode': newRoom.gamemode,
       'turn': newRoom.turn,
-      'board': newRoom.board,
+      'board': List.filled(9, ''),
       'winner': newRoom.winner,
       'x_queue': newRoom.xQueue,
       'o_queue': newRoom.oQueue,
@@ -57,7 +61,7 @@ class GameController extends ChangeNotifier {
     final docSnap = await docRef.get();
 
     if (docSnap.exists && docSnap.data()!['state'] == 'waiting') {
-      await docRef.update({'o_player': userId, 'state': 'playing'});
+      await docRef.update({'o_player': userId});
       _listenRoom(roomCode);
       return true;
     }
@@ -71,7 +75,7 @@ class GameController extends ChangeNotifier {
         .collection('games')
         .doc(roomCode)
         .snapshots()
-        .listen((snapshot) {
+        .listen((snapshot) async {
           if (snapshot.exists) {
             final data = snapshot.data()!;
 
@@ -88,9 +92,35 @@ class GameController extends ChangeNotifier {
               oQueue: List<int>.from(data['o_queue']),
             );
 
+            if (_currentGame!.xPlayer.isNotEmpty &&
+                _xPlayerName == 'Cargando...') {
+              final xDoc = await _firestore
+                  .collection('users')
+                  .doc(_currentGame!.xPlayer)
+                  .get();
+              if (xDoc.exists) {
+                _xPlayerName = xDoc.data()?['username'] ?? 'Jugador X';
+                _xPlayerPfpUrl = xDoc.data()?['pfpUrl'];
+              }
+            }
+
+            if (_currentGame!.oPlayer.isNotEmpty &&
+                _oPlayerName == 'Esperando...') {
+              final oDoc = await _firestore
+                  .collection('users')
+                  .doc(_currentGame!.oPlayer)
+                  .get();
+              if (oDoc.exists) {
+                _oPlayerName = oDoc.data()?['username'] ?? 'Jugador O';
+                _oPlayerPfpUrl = oDoc.data()?['pfpUrl'];
+              }
+            }
+
             notifyListeners();
           } else {
             _currentGame = null;
+            _xPlayerName = 'Cargando...';
+            _oPlayerName = 'Esperando...';
             notifyListeners();
           }
         });
@@ -158,15 +188,32 @@ class GameController extends ChangeNotifier {
     }
   }
 
+  Future<void> passTurn() async {
+    if (_currentGame == null || _currentGame!.state != 'playing') return;
+
+    String nextTurn = _currentGame!.turn == 'x' ? 'o' : 'x';
+
+    try {
+      await _firestore.collection('games').doc(_currentGame!.id).update({
+        'turn': nextTurn,
+      });
+    } catch (e) {
+      // nada
+    }
+  }
+
   Future<void> exitAndCleanRoom() async {
     if (_currentGame == null) return;
 
     String roomId = _currentGame!.id;
-
     _gameSubscription?.cancel();
     await _firestore.collection('games').doc(roomId).delete();
 
     _currentGame = null;
+    _xPlayerName = 'Cargando...';
+    _oPlayerName = 'Esperando...';
+    _xPlayerPfpUrl = null;
+    _oPlayerPfpUrl = null;
     notifyListeners();
   }
 

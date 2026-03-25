@@ -50,8 +50,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
         maxHeight: 300,
         imageQuality: 85,
       );
+
       if (picked != null && mounted) {
+        final auth = context.read<AuthController>();
         setState(() => _playerPhoto = File(picked.path));
+        auth.updatePfp(_playerPhoto!);
       }
     } catch (_) {}
   }
@@ -77,17 +80,30 @@ class _LobbyScreenState extends State<LobbyScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            Text('Selecciona tu avatar',
-                style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: _C.onBg)),
+            Text(
+              'Selecciona tu avatar',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: _C.onBg,
+              ),
+            ),
             const SizedBox(height: 20),
-            _photoOption(ctx, Icons.camera_alt_rounded, 'Tomar foto',
-                _C.secondary, ImageSource.camera),
+            _photoOption(
+              ctx,
+              Icons.camera_alt_rounded,
+              'Tomar foto',
+              _C.secondary,
+              ImageSource.camera,
+            ),
             const SizedBox(height: 8),
-            _photoOption(ctx, Icons.photo_library_rounded, 'Galer\u00EDa',
-                _C.tertiary, ImageSource.gallery),
+            _photoOption(
+              ctx,
+              Icons.photo_library_rounded,
+              'Galer\u00EDa',
+              _C.tertiary,
+              ImageSource.gallery,
+            ),
             const SizedBox(height: 12),
           ],
         ),
@@ -95,8 +111,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
     );
   }
 
-  Widget _photoOption(BuildContext ctx, IconData icon, String label,
-      Color color, ImageSource source) {
+  Widget _photoOption(
+    BuildContext ctx,
+    IconData icon,
+    String label,
+    Color color,
+    ImageSource source,
+  ) {
     return ListTile(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       leading: Container(
@@ -107,11 +128,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
         ),
         child: Icon(icon, color: color),
       ),
-      title: Text(label,
-          style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: _C.onBg)),
+      title: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: _C.onBg,
+        ),
+      ),
       trailing: Icon(Icons.chevron_right, color: _C.onSurfaceVar),
       onTap: () {
         Navigator.pop(ctx);
@@ -122,147 +146,193 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   Future<void> _createRoom() async {
     final auth = context.read<AuthController>();
+    final game = context.read<GameController>();
+    final userId = auth.currentUser?.uid ?? '';
     final username = auth.currentUser?.username ?? 'Jugador';
     final code = createLobbyCode();
+
+    await game.createRoom(code, userId, _gameMode);
 
     final shouldStart = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (dialogCtx) {
-        bool opponentJoined = false;
+        return Consumer<GameController>(
+          builder: (context, gameProvider, child) {
+            bool opponentJoined =
+                gameProvider.currentGame?.oPlayer.isNotEmpty ?? false;
 
-        return StatefulBuilder(
-          builder: (context, setDialogState) => Dialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28)),
-            insetPadding:
-                const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(dialogCtx).pop(false),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          shape: BoxShape.circle,
+            String opponentName = gameProvider.oPlayerName;
+
+            return Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadiusGeometry.circular(28),
+              ),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 28,
+                vertical: 40,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(dialogCtx).pop(false),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: _C.onSurfaceVar,
+                            size: 20,
+                          ),
                         ),
-                        child: Icon(Icons.close_rounded,
-                            color: _C.onSurfaceVar, size: 20),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text('C\u00F3digo de sala',
+                    const SizedBox(height: 4),
+                    Text(
+                      'C\u00F3digo de sala',
                       style: GoogleFonts.inter(
-                          fontSize: 13, color: _C.onSurfaceVar)),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 14, horizontal: 24),
-                    decoration: BoxDecoration(
-                      color: _C.primaryContainer,
-                      borderRadius: BorderRadius.circular(16),
+                        fontSize: 13,
+                        color: _C.onSurfaceVar,
+                      ),
                     ),
-                    child: SelectableText(code,
-                        style: GoogleFonts.inter(
-                            fontSize: 32,
-                            color: _C.primary,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 6)),
-                  ),
-                  const SizedBox(height: 24),
-                  Text('Jugadores',
-                      style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: _C.onBg)),
-                  const SizedBox(height: 14),
-                  _playerWaitTag(
-                      username, _C.primary, Icons.person_rounded, true),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Icon(Icons.add_rounded,
-                        color: _C.onSurfaceVar.withAlpha(100), size: 22),
-                  ),
-                  opponentJoined
-                      ? _playerWaitTag('Oponente', _C.secondary,
-                          Icons.person_rounded, true)
-                      : _playerWaitTag('Esperando jugador\u2026',
-                          _C.onSurfaceVar, Icons.hourglass_top_rounded, false),
-                  const SizedBox(height: 24),
-                  GestureDetector(
-                    onTap: () => Navigator.of(dialogCtx).pop(true),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 24,
+                      ),
                       decoration: BoxDecoration(
-                        color: opponentJoined
-                            ? _C.primary
-                            : Colors.grey.shade200,
+                        color: _C.primaryContainer,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: opponentJoined
-                            ? [BoxShadow(color: _C.primary.withAlpha(60), blurRadius: 12, offset: const Offset(0, 4))]
-                            : [],
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.play_arrow_rounded,
+                      child: SelectableText(
+                        code,
+                        style: GoogleFonts.inter(
+                          fontSize: 32,
+                          color: _C.primary,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 6,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Jugadores',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: _C.onBg,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _playerWaitTag(
+                      username,
+                      _C.primary,
+                      Icons.person_rounded,
+                      true,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Icon(
+                        Icons.add_rounded,
+                        color: _C.onSurfaceVar.withAlpha(100),
+                        size: 22,
+                      ),
+                    ),
+                    opponentJoined
+                        ? _playerWaitTag(
+                            opponentName,
+                            _C.secondary,
+                            Icons.person_rounded,
+                            true,
+                          )
+                        : _playerWaitTag(
+                            'Esperando jugador\u2026',
+                            _C.onSurfaceVar,
+                            Icons.hourglass_top_rounded,
+                            false,
+                          ),
+                    const SizedBox(height: 24),
+                    GestureDetector(
+                      onTap: opponentJoined
+                          ? () => Navigator.of(dialogCtx).pop(true)
+                          : null,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: opponentJoined
+                              ? _C.primary
+                              : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: opponentJoined
+                              ? [
+                                  BoxShadow(
+                                    color: _C.primary.withAlpha(60),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.play_arrow_rounded,
                               color: opponentJoined
                                   ? Colors.white
                                   : _C.onSurfaceVar.withAlpha(100),
-                              size: 24),
-                          const SizedBox(width: 8),
-                          Text('Jugar',
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Jugar',
                               style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: opponentJoined
-                                      ? Colors.white
-                                      : _C.onSurfaceVar.withAlpha(100))),
-                        ],
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: opponentJoined
+                                    ? Colors.white
+                                    : _C.onSurfaceVar.withAlpha(100),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
 
     if (shouldStart == true && mounted) {
-      final auth = context.read<AuthController>();
-      final userId = auth.currentUser?.uid ?? '';
+      await game.startGame();
 
-      context.read<GameController>().startLocalGame(
-            code,
-            userId,
-            'opponent',
-            _gameMode,
-          );
-
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => GameScreen(
-          roomCode: code,
-          gameMode: _gameMode,
-          playerPhoto: _playerPhoto,
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => GameScreen(roomCode: code, gameMode: _gameMode),
         ),
-      ));
+      );
+    } else if (shouldStart == false) {
+      await game.exitAndCleanRoom();
     }
   }
 
-  Widget _playerWaitTag(
-      String label, Color color, IconData icon, bool active) {
+  Widget _playerWaitTag(String label, Color color, IconData icon, bool active) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -286,11 +356,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(label,
-                style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: active ? _C.onBg : _C.onSurfaceVar.withAlpha(120))),
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: active ? _C.onBg : _C.onSurfaceVar.withAlpha(120),
+              ),
+            ),
           ),
           if (active) Icon(Icons.check_circle_rounded, color: color, size: 22),
         ],
@@ -309,21 +382,74 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     if (!mounted) return;
     if (joined) {
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => GameScreen(
-          roomCode: code,
-          gameMode: _gameMode,
-          playerPhoto: _playerPhoto,
-        ),
-      ));
+      showDialog(
+        context: context,
+        builder: (dialogCtx) {
+          return Consumer<GameController>(
+            builder: (context, gameProvider, child) {
+              if (gameProvider.currentGame?.state == 'playing') {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (Navigator.canPop(dialogCtx)) {
+                    Navigator.of(dialogCtx).pop();
+                  }
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          GameScreen(roomCode: code, gameMode: _gameMode),
+                    ),
+                  );
+                });
+              }
+              return Dialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadiusGeometry.circular(28),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(color: _C.primary),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Esperando al anfitrión...',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: _C.onBg,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'La partida iniciará pronto.',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: _C.onSurfaceVar,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Sala no encontrada o ya est\u00E1 llena.',
-            style: GoogleFonts.inter(color: Colors.white)),
-        backgroundColor: _C.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Sala no encontrada o ya est\u00E1 llena.',
+            style: GoogleFonts.inter(color: Colors.white),
+          ),
+          backgroundColor: _C.primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     }
   }
 
@@ -340,11 +466,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
         children: [
           Icon(icon, color: color, size: 14),
           const SizedBox(width: 5),
-          Text(label,
-              style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: color)),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
@@ -361,9 +490,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       body: Stack(
         children: [
           Container(color: const Color(0xFFFDF8FA)),
-          Positioned.fill(
-            child: CustomPaint(painter: _SymbolsBgPainter()),
-          ),
+          Positioned.fill(child: CustomPaint(painter: _SymbolsBgPainter())),
           SafeArea(
             child: Column(
               children: [
@@ -407,9 +534,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
           border: Border.all(color: _C.primary.withAlpha(13)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withAlpha(10),
-                blurRadius: 8,
-                offset: const Offset(0, 2)),
+              color: Colors.black.withAlpha(10),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: Icon(icon, color: color, size: 24),
@@ -422,18 +550,28 @@ class _LobbyScreenState extends State<LobbyScreen> {
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
       child: Row(
         children: [
-          _navButton(Icons.logout_rounded, _C.primary,
-              () => context.read<AuthController>().logout()),
+          _navButton(
+            Icons.logout_rounded,
+            _C.primary,
+            () => context.read<AuthController>().logout(),
+          ),
           const Spacer(),
-          _navButton(Icons.history_rounded, _C.primary,
-              () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const HistoryScreen()))),
+          _navButton(
+            Icons.history_rounded,
+            _C.primary,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HistoryScreen()),
+            ),
+          ),
           const SizedBox(width: 12),
           _navButton(
             Icons.emoji_events_rounded,
             const Color(0xFFFFD700),
-            () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const DashboardScreen())),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardScreen()),
+            ),
           ),
         ],
       ),
@@ -456,11 +594,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 ),
               ),
               const SizedBox(height: 2),
-              Text('\u00BFListo para jugar?',
-                  style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: _C.onSurfaceVar.withAlpha(180))),
+              Text(
+                '\u00BFListo para jugar?',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: _C.onSurfaceVar.withAlpha(180),
+                ),
+              ),
             ],
           ),
         ),
@@ -468,7 +609,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           'assets/images/catprofile_sinfondo.png',
           width: 90,
           height: 90,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          errorBuilder: (_, _, _) => const SizedBox.shrink(),
         ),
       ],
     );
@@ -490,9 +631,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
         border: Border.all(color: Colors.white.withAlpha(128)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 10,
-              offset: const Offset(0, 3)),
+            color: Colors.black.withAlpha(8),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Row(
@@ -510,9 +652,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     border: Border.all(color: Colors.white, width: 3),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withAlpha(10),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2)),
+                        color: Colors.black.withAlpha(10),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
                     ],
                     image: DecorationImage(
                       image: _playerPhoto != null
@@ -533,15 +676,21 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                            color: Colors.black.withAlpha(20),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2)),
+                          color: Colors.black.withAlpha(20),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
                       ],
                       border: Border.all(
-                          color: _C.secondaryContainer, width: 1),
+                        color: _C.secondaryContainer,
+                        width: 1,
+                      ),
                     ),
-                    child: const Icon(Icons.photo_camera_rounded,
-                        color: _C.secondary, size: 14),
+                    child: const Icon(
+                      Icons.photo_camera_rounded,
+                      color: _C.secondary,
+                      size: 14,
+                    ),
                   ),
                 ),
               ],
@@ -552,17 +701,23 @@ class _LobbyScreenState extends State<LobbyScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Tu Avatar',
-                    style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: _C.secondary)),
+                Text(
+                  'Tu Avatar',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: _C.secondary,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text('Cambia tu foto para usarla como ficha',
-                    style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: _C.secondary.withAlpha(180),
-                        height: 1.3)),
+                Text(
+                  'Cambia tu foto para usarla como ficha',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: _C.secondary.withAlpha(180),
+                    height: 1.3,
+                  ),
+                ),
               ],
             ),
           ),
@@ -577,12 +732,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 10),
-          child: Text('MODO DE JUEGO',
-              style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: _C.onSurfaceVar,
-                  letterSpacing: 1.2)),
+          child: Text(
+            'MODO DE JUEGO',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: _C.onSurfaceVar,
+              letterSpacing: 1.2,
+            ),
+          ),
         ),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -621,8 +779,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
     );
   }
 
-  Widget _modeCard(String mode, String title, String subtitle, IconData icon,
-      Color bg, Color accent) {
+  Widget _modeCard(
+    String mode,
+    String title,
+    String subtitle,
+    IconData icon,
+    Color bg,
+    Color accent,
+  ) {
     final sel = _gameMode == mode;
     return GestureDetector(
       onTap: () => setState(() => _gameMode = mode),
@@ -638,7 +802,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
             width: sel ? 2.5 : 1,
           ),
           boxShadow: sel
-              ? [BoxShadow(color: accent.withAlpha(40), blurRadius: 12, offset: const Offset(0, 4))]
+              ? [
+                  BoxShadow(
+                    color: accent.withAlpha(40),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
               : [],
         ),
         child: Column(
@@ -653,15 +823,21 @@ class _LobbyScreenState extends State<LobbyScreen> {
               child: Icon(icon, color: accent, size: 22),
             ),
             const SizedBox(height: 6),
-            Text(title,
-                style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: accent)),
-            Text(subtitle,
-                style: GoogleFonts.inter(
-                    fontSize: 9,
-                    color: accent.withAlpha(153))),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: accent,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 9,
+                color: accent.withAlpha(153),
+              ),
+            ),
           ],
         ),
       ),
@@ -684,9 +860,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
         border: Border.all(color: Colors.white.withAlpha(102)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 10,
-              offset: const Offset(0, 3)),
+            color: Colors.black.withAlpha(8),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Column(
@@ -694,12 +871,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 12),
-            child: Text('SALA',
-                style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: _C.primary,
-                    letterSpacing: 1.2)),
+            child: Text(
+              'SALA',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: _C.primary,
+                letterSpacing: 1.2,
+              ),
+            ),
           ),
           GestureDetector(
             onTap: _createRoom,
@@ -711,9 +891,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withAlpha(8),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2)),
+                    color: Colors.black.withAlpha(8),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
               ),
               child: Row(
@@ -721,11 +902,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 children: [
                   const Icon(Icons.add_rounded, color: _C.primary, size: 20),
                   const SizedBox(width: 8),
-                  Text('Crear Sala',
-                      style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: _C.primary)),
+                  Text(
+                    'Crear Sala',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: _C.primary,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -734,17 +918,22 @@ class _LobbyScreenState extends State<LobbyScreen> {
           Row(
             children: [
               Expanded(
-                  child: Divider(color: _C.primary.withAlpha(50), height: 1)),
+                child: Divider(color: _C.primary.withAlpha(50), height: 1),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text('O',
-                    style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: _C.primary.withAlpha(100))),
+                child: Text(
+                  'O',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: _C.primary.withAlpha(100),
+                  ),
+                ),
               ),
               Expanded(
-                  child: Divider(color: _C.primary.withAlpha(50), height: 1)),
+                child: Divider(color: _C.primary.withAlpha(50), height: 1),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -757,21 +946,28 @@ class _LobbyScreenState extends State<LobbyScreen> {
               controller: _roomCodeCtrl,
               textCapitalization: TextCapitalization.characters,
               style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: _C.primary,
-                  letterSpacing: 2),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: _C.primary,
+                letterSpacing: 2,
+              ),
               decoration: InputDecoration(
                 hintText: 'C\u00F3digo de sala',
                 hintStyle: GoogleFonts.inter(
-                    color: _C.primary.withAlpha(77),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500),
-                prefixIcon: Icon(Icons.door_sliding_outlined,
-                    color: _C.primary.withAlpha(100), size: 20),
+                  color: _C.primary.withAlpha(77),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                prefixIcon: Icon(
+                  Icons.door_sliding_outlined,
+                  color: _C.primary.withAlpha(100),
+                  size: 20,
+                ),
                 border: InputBorder.none,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
               ),
             ),
           ),
@@ -786,22 +982,29 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                      color: _C.primary.withAlpha(50),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4)),
+                    color: _C.primary.withAlpha(50),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.login_rounded,
-                      color: Colors.white, size: 20),
+                  const Icon(
+                    Icons.login_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
-                  Text('Unirse a Sala',
-                      style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white)),
+                  Text(
+                    'Unirse a Sala',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
                 ],
               ),
             ),

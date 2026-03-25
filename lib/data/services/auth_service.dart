@@ -1,8 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:tictactoe/data/models/user_model.dart';
 
 class AuthService {
@@ -65,6 +65,7 @@ class AuthService {
             uid: data['uid'],
             username: data['username'],
             email: data['email'],
+            pfpUrl: data['pfpUrl'] ?? '',
           );
         }
       }
@@ -93,6 +94,7 @@ class AuthService {
           uid: data['uid'],
           username: data['username'],
           email: data['email'],
+          pfpUrl: data['pfpUrl'] ?? '',
         );
       }
     } catch (e) {
@@ -103,22 +105,17 @@ class AuthService {
 
   Future<String?> uploadPfp(String uid, File imageFile) async {
     try {
-      Reference ref = FirebaseStorage.instance
-          .ref()
-          .child('pfps')
-          .child('$uid.jpg');
+      List<int> imageBytes = await imageFile.readAsBytes();
 
-      UploadTask uploadTask = ref.putFile(imageFile);
-      TaskSnapshot snapshot = await uploadTask;
+      String base64Image = base64Encode(imageBytes);
 
-      String downloadUrl = await snapshot.ref.getDownloadURL();
-
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
-        'pfpUrl': downloadUrl,
+      await _firestore.collection('users').doc(uid).update({
+        'pfpUrl': base64Image,
       });
 
-      return downloadUrl;
+      return base64Image;
     } catch (e) {
+      print(e);
       return null;
     }
   }
