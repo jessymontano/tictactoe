@@ -276,14 +276,17 @@ class GameController extends ChangeNotifier {
       final userDoc = await _firestore.collection('users').doc(uid).get();
 
       String username = 'Jugador';
+      String pfpUrl = '';
 
       if (userDoc.exists) {
         username = userDoc.data()?['username'] ?? 'Jugador';
+        pfpUrl = userDoc.data()?['pfpUrl'] ?? '';
       }
 
       leaderboard.add({
         'uid': uid,
         'name': username,
+        'pfpUrl': pfpUrl,
         'wins': wins,
         'losses': losses,
       });

@@ -13,23 +13,6 @@ class _C {
   static const accentGreen = Color(0xFF9ED3A5);
   static const onSurface = Color(0xFF333333);
   static const onSurfaceVar = Color(0xFF666666);
-  static const btnColor = Color(0xFF715867);
-}
-
-class _MatchData {
-  final String opponent;
-  final String result;
-  final String mode;
-  final String date;
-  final List<String> board;
-
-  const _MatchData({
-    required this.opponent,
-    required this.result,
-    required this.mode,
-    required this.date,
-    required this.board,
-  });
 }
 
 class HistoryScreen extends StatefulWidget {

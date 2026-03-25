@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -10,7 +11,6 @@ class _C {
   static const primary = Color(0xFF7F95BC);
   static const accentPink = Color(0xFFB86A8C);
   static const accentGreen = Color(0xFF9ED3A5);
-  static const tertiary = Color(0xFF9B7BB5);
   static const onSurface = Color(0xFF333333);
   static const onSurfaceVar = Color(0xFF666666);
   static const btnColor = Color(0xFF715867);
@@ -77,7 +77,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final wins = p['wins'];
       final losses = p['losses'];
 
-      return {'name': p['name'], 'wins': wins, 'games': wins + losses};
+      return {
+        'name': p['name'],
+        'pfpUrl': p['pfpUrl'],
+        'wins': wins,
+        'games': wins + losses,
+      };
     }).toList();
 
     setState(() {
@@ -174,6 +179,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _podiumPlace(Map<String, dynamic> p, int rank, Color color, double h) {
+    final String pfpBase64 = p['pfpUrl'];
+
     return Column(
       children: [
         Container(
@@ -190,14 +197,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 offset: const Offset(0, 3),
               ),
             ],
+            image: pfpBase64.isNotEmpty
+                ? DecorationImage(
+                    image: MemoryImage(base64Decode(pfpBase64)),
+                    fit: BoxFit.cover,
+                  )
+                : null,
           ),
-          child: Center(
-            child: Icon(
-              Icons.person_rounded,
-              color: Colors.grey.shade300,
-              size: 26,
-            ),
-          ),
+          child: pfpBase64.isEmpty
+              ? Center(
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: Colors.grey.shade300,
+                    size: 26,
+                  ),
+                )
+              : null,
         ),
         const SizedBox(height: 6),
         Text(
@@ -392,12 +407,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _C.primary.withAlpha(25),
+                    image: p['pfpUrl'].toString().isNotEmpty
+                        ? DecorationImage(
+                            image: MemoryImage(base64Decode(p['pfpUrl'])),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                  child: Icon(
-                    Icons.person_rounded,
-                    color: _C.primary.withAlpha(120),
-                    size: 16,
-                  ),
+                  child: p['pfpUrl'].toString().isEmpty
+                      ? Icon(
+                          Icons.person_rounded,
+                          color: _C.primary.withAlpha(120),
+                          size: 16,
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
