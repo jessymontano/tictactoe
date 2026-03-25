@@ -387,6 +387,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
         builder: (dialogCtx) {
           return Consumer<GameController>(
             builder: (context, gameProvider, child) {
+              final serverGameMode =
+                  gameProvider.currentGame?.gamemode ?? _gameMode;
+
               if (gameProvider.currentGame?.state == 'playing') {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (Navigator.canPop(dialogCtx)) {
@@ -395,7 +398,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) =>
-                          GameScreen(roomCode: code, gameMode: _gameMode),
+                          GameScreen(roomCode: code, gameMode: serverGameMode),
                     ),
                   );
                 });
@@ -742,37 +745,39 @@ class _LobbyScreenState extends State<LobbyScreen> {
             ),
           ),
         ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _modeCard(
-                'normal',
-                'Normal',
-                'Cl\u00E1sico',
-                Icons.sports_esports_rounded,
-                _C.tertiaryContainer.withAlpha(153),
-                _C.tertiary,
-              ),
-              const SizedBox(width: 12),
-              _modeCard(
-                'math',
-                'Matem\u00E1tico',
-                'Resuelve',
-                Icons.calculate_rounded,
-                _C.secondaryContainer.withAlpha(153),
-                _C.secondary,
-              ),
-              const SizedBox(width: 12),
-              _modeCard(
-                'infinite',
-                'Infinito',
-                'Sin fin',
-                Icons.all_inclusive_rounded,
-                _C.primaryContainer.withAlpha(102),
-                _C.primary,
-              ),
-            ],
+        Center(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _modeCard(
+                  'normal',
+                  'Normal',
+                  'Cl\u00E1sico',
+                  Icons.sports_esports_rounded,
+                  _C.tertiaryContainer.withAlpha(153),
+                  _C.tertiary,
+                ),
+                const SizedBox(width: 12),
+                _modeCard(
+                  'math',
+                  'Matem\u00E1tico',
+                  'Resuelve',
+                  Icons.calculate_rounded,
+                  _C.secondaryContainer.withAlpha(153),
+                  _C.secondary,
+                ),
+                const SizedBox(width: 12),
+                _modeCard(
+                  'infinite',
+                  'Infinito',
+                  'Sin fin',
+                  Icons.all_inclusive_rounded,
+                  _C.primaryContainer.withAlpha(102),
+                  _C.primary,
+                ),
+              ],
+            ),
           ),
         ),
       ],
