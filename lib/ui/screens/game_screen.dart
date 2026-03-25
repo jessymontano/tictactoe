@@ -56,7 +56,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
     if (game == null) {
       if (mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
+        //Navigator.of(context).pop();
       }
       return;
     }
