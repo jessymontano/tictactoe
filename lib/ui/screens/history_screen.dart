@@ -2,6 +2,9 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:tictactoe/logic/auth_controller.dart';
+import 'package:tictactoe/logic/history_controller.dart';
 
 class _C {
   static const bg = Color(0xFFE6E6E6);
@@ -29,60 +32,23 @@ class _MatchData {
   });
 }
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
-  static final List<_MatchData> _mock = [
-    _MatchData(
-      opponent: 'ProPlayer99',
-      result: 'win',
-      mode: 'normal',
-      date: 'Hoy, 14:32',
-      board: ['x', 'o', 'x', '', 'x', 'o', 'o', '', 'x'],
-    ),
-    _MatchData(
-      opponent: 'MathWizard',
-      result: 'lose',
-      mode: 'math',
-      date: 'Hoy, 13:10',
-      board: ['o', 'x', 'o', 'x', 'o', '', 'x', '', 'o'],
-    ),
-    _MatchData(
-      opponent: 'UnisonChamp',
-      result: 'draw',
-      mode: 'normal',
-      date: 'Ayer, 20:45',
-      board: ['x', 'o', 'x', 'x', 'o', 'o', 'o', 'x', 'x'],
-    ),
-    _MatchData(
-      opponent: 'CatKing',
-      result: 'win',
-      mode: 'infinite',
-      date: 'Ayer, 18:20',
-      board: ['x', '', 'o', '', 'x', '', 'o', '', 'x'],
-    ),
-    _MatchData(
-      opponent: 'NeonPlayer',
-      result: 'win',
-      mode: 'math',
-      date: '22 Mar, 11:05',
-      board: ['x', 'x', 'x', 'o', 'o', '', '', '', ''],
-    ),
-    _MatchData(
-      opponent: 'StarGato',
-      result: 'lose',
-      mode: 'infinite',
-      date: '21 Mar, 09:30',
-      board: ['o', '', 'x', 'x', 'o', '', '', '', 'o'],
-    ),
-    _MatchData(
-      opponent: 'PixelMaster',
-      result: 'win',
-      mode: 'normal',
-      date: '20 Mar, 16:15',
-      board: ['x', 'o', '', 'o', 'x', '', '', 'o', 'x'],
-    ),
-  ];
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthController>();
+      final userId = auth.currentUser?.uid ?? '';
+      context.read<HistoryController>().fetchHistory(userId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,14 +58,30 @@ class HistoryScreen extends StatelessWidget {
           Container(color: _C.bg),
           Positioned.fill(child: CustomPaint(painter: _BgPainter())),
           SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: 8),
-                _buildStats(),
-                const SizedBox(height: 16),
-                Expanded(child: _buildMatchList()),
-              ],
+            child: Consumer<HistoryController>(
+              builder: (context, historyCtrl, _) {
+                if (historyCtrl.isLoading) {
+                  return Column(
+                    children: [
+                      _buildHeader(context),
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  );
+                }
+                final matches = historyCtrl.matches;
+
+                return Column(
+                  children: [
+                    _buildHeader(context),
+                    const SizedBox(height: 8),
+                    _buildStats(matches),
+                    const SizedBox(height: 16),
+                    Expanded(child: _buildMatchList(matches)),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -117,16 +99,22 @@ class HistoryScreen extends StatelessWidget {
             child: const SizedBox(
               width: 40,
               height: 40,
-              child: Icon(Icons.arrow_back_rounded,
-                  color: _C.onSurface, size: 28),
+              child: Icon(
+                Icons.arrow_back_rounded,
+                color: _C.onSurface,
+                size: 28,
+              ),
             ),
           ),
           const Spacer(),
-          Text('Historial',
-              style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: _C.onSurface)),
+          Text(
+            'Historial',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: _C.onSurface,
+            ),
+          ),
           const Spacer(),
           const SizedBox(width: 40),
         ],
@@ -134,26 +122,41 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStats() {
-    final wins = _mock.where((m) => m.result == 'win').length;
-    final losses = _mock.where((m) => m.result == 'lose').length;
-    final draws = _mock.where((m) => m.result == 'draw').length;
+  Widget _buildStats(List<MatchData> matches) {
+    final wins = matches.where((m) => m.result == 'win').length;
+    final losses = matches.where((m) => m.result == 'lose').length;
+    final draws = matches.where((m) => m.result == 'draw').length;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           Expanded(
-              child: _statCard(
-                  '$wins', 'Victorias', _C.accentGreen, Icons.check_circle_rounded)),
+            child: _statCard(
+              '$wins',
+              'Victorias',
+              _C.accentGreen,
+              Icons.check_circle_rounded,
+            ),
+          ),
           const SizedBox(width: 10),
           Expanded(
-              child: _statCard(
-                  '$losses', 'Derrotas', _C.accentPink, Icons.cancel_rounded)),
+            child: _statCard(
+              '$losses',
+              'Derrotas',
+              _C.accentPink,
+              Icons.cancel_rounded,
+            ),
+          ),
           const SizedBox(width: 10),
           Expanded(
-              child: _statCard(
-                  '$draws', 'Empates', _C.primary, Icons.remove_circle_rounded)),
+            child: _statCard(
+              '$draws',
+              'Empates',
+              _C.primary,
+              Icons.remove_circle_rounded,
+            ),
+          ),
         ],
       ),
     );
@@ -171,29 +174,48 @@ class HistoryScreen extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 22),
           const SizedBox(height: 6),
-          Text(value,
-              style: GoogleFonts.inter(
-                  fontSize: 22, fontWeight: FontWeight.w800, color: color)),
-          Text(label,
-              style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: _C.onSurfaceVar)),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: _C.onSurfaceVar,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMatchList() {
+  Widget _buildMatchList(List<MatchData> matches) {
+    if (matches.isEmpty) {
+      return Center(
+        child: Text(
+          "Aún no has jugado ninguna partida.",
+          style: GoogleFonts.inter(
+            color: _C.onSurfaceVar,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      itemCount: _mock.length,
+      itemCount: matches.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => _matchCard(_mock[i]),
+      itemBuilder: (_, i) => _matchCard(matches[i]),
     );
   }
 
-  Widget _matchCard(_MatchData match) {
+  Widget _matchCard(MatchData match) {
     Color resultColor;
     String resultLabel;
     IconData resultIcon;
@@ -234,9 +256,10 @@ class HistoryScreen extends StatelessWidget {
         border: Border.all(color: resultColor.withAlpha(40)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withAlpha(6),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
+            color: Colors.black.withAlpha(6),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Row(
@@ -257,24 +280,32 @@ class HistoryScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text('vs ${match.opponent}',
-                        style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: _C.onSurface)),
+                    Text(
+                      'vs ${match.opponent}',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _C.onSurface,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: resultColor.withAlpha(20),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(resultLabel,
-                          style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: resultColor)),
+                      child: Text(
+                        resultLabel,
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: resultColor,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -283,16 +314,27 @@ class HistoryScreen extends StatelessWidget {
                   children: [
                     Icon(modeIcon, size: 12, color: _C.onSurfaceVar),
                     const SizedBox(width: 4),
-                    Text(modeLabel,
-                        style: GoogleFonts.inter(
-                            fontSize: 11, color: _C.onSurfaceVar)),
+                    Text(
+                      modeLabel,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: _C.onSurfaceVar,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Icon(Icons.schedule_rounded,
-                        size: 12, color: _C.onSurfaceVar),
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 12,
+                      color: _C.onSurfaceVar,
+                    ),
                     const SizedBox(width: 4),
-                    Text(match.date,
-                        style: GoogleFonts.inter(
-                            fontSize: 11, color: _C.onSurfaceVar)),
+                    Text(
+                      match.date,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: _C.onSurfaceVar,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -334,16 +376,22 @@ class HistoryScreen extends StatelessWidget {
           }
           return Container(
             decoration: BoxDecoration(
-              color: v.isNotEmpty ? cellColor.withAlpha(40) : Colors.white.withAlpha(120),
+              color: v.isNotEmpty
+                  ? cellColor.withAlpha(40)
+                  : Colors.white.withAlpha(120),
               borderRadius: BorderRadius.circular(2),
             ),
             child: v.isNotEmpty
                 ? Center(
-                    child: Text(v.toUpperCase(),
-                        style: TextStyle(
-                            fontSize: 7,
-                            fontWeight: FontWeight.w800,
-                            color: cellColor)))
+                    child: Text(
+                      v.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 7,
+                        fontWeight: FontWeight.w800,
+                        color: cellColor,
+                      ),
+                    ),
+                  )
                 : null,
           );
         },

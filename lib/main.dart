@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:tictactoe/logic/auth_controller.dart';
 import 'package:tictactoe/logic/game_controller.dart';
+import 'package:tictactoe/logic/history_controller.dart';
 import 'package:tictactoe/ui/screens/login.dart';
 import 'package:tictactoe/ui/screens/lobby.dart';
 import 'firebase_options.dart';
@@ -20,6 +21,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthController()),
         ChangeNotifierProvider(create: (_) => GameController()),
+        ChangeNotifierProvider(create: (_) => HistoryController()),
       ],
       child: const MyApp(),
     ),
