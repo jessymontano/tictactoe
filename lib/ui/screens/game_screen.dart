@@ -51,6 +51,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   }
 
   void _onGameChanged() {
+    if (!mounted) return;
     final game = context.read<GameController>().currentGame;
 
     if (game == null) {

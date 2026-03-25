@@ -239,6 +239,45 @@ class GameController extends ChangeNotifier {
     return false;
   }
 
+  Future<List<Map<String, dynamic>>> getLeaderboard() async {
+    final snapshot = await _firestore.collection('history').get();
+
+    Map<String, Map<String, dynamic>> stats = {};
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+
+      String x = data['x_player'];
+      String o = data['o_player'];
+      String winner = data['winner'];
+
+      //init players
+      stats.putIfAbsent(x, () => {'uid': x, 'wins': 0, 'losses': 0});
+
+      stats.putIfAbsent(o, () => {'uid': o, 'wins': 0, 'losses': 0});
+
+      if (winner == 'x') {
+        stats[x]!['wins']++;
+        stats[o]!['losses']++;
+      } else if (winner == 'o') {
+        stats[o]!['wins']++;
+        stats[x]!['losses']++;
+      }
+    }
+
+    //convert to list
+    List<Map<String, dynamic>> leaderboard = stats.values.map((player) {
+      int wins = player['wins'];
+      int losses = player['losses'];
+
+      return {'uid': player['uid'], 'wins': wins, 'losses': losses};
+    }).toList();
+
+    leaderboard.sort((a, b) => b['wins'].compareTo(a['wins']));
+
+    return leaderboard;
+  }
+
   @override
   void dispose() {
     _gameSubscription?.cancel();

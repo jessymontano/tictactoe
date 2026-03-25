@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:tictactoe/logic/game_controller.dart';
 
 class _C {
   static const bg = Color(0xFFE6E6E6);
@@ -17,21 +19,21 @@ class _C {
   static const bronze = Color(0xFFCD7F32);
 }
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
-  static final List<Map<String, dynamic>> _mock = [
-    {'name': 'GatoMaster', 'wins': 45, 'games': 52},
-    {'name': 'ProPlayer99', 'wins': 38, 'games': 48},
-    {'name': 'UnisonChamp', 'wins': 35, 'games': 44},
-    {'name': 'MathWizard', 'wins': 32, 'games': 40},
-    {'name': 'TicTacPro', 'wins': 28, 'games': 38},
-    {'name': 'SonoraGamer', 'wins': 25, 'games': 35},
-    {'name': 'CatKing', 'wins': 22, 'games': 30},
-    {'name': 'NeonPlayer', 'wins': 20, 'games': 29},
-    {'name': 'StarGato', 'wins': 18, 'games': 26},
-    {'name': 'PixelMaster', 'wins': 15, 'games': 24},
-  ];
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  List<Map<String, dynamic>> _mock = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLeaderboard();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,15 +49,17 @@ class DashboardScreen extends StatelessWidget {
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(children: [
-                      const SizedBox(height: 12),
-                      _buildTrophy(),
-                      const SizedBox(height: 20),
-                      _buildPodium(),
-                      const SizedBox(height: 20),
-                      _buildTable(),
-                      const SizedBox(height: 24),
-                    ]),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 12),
+                        _buildTrophy(),
+                        const SizedBox(height: 20),
+                        _buildPodium(),
+                        const SizedBox(height: 20),
+                        _buildTable(),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -64,6 +68,25 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _loadLeaderboard() async {
+    final data = await context.read<GameController>().getLeaderboard();
+
+    List<Map<String, dynamic>> temp = data.map((p) {
+      final wins = p['wins'];
+      final losses = p['losses'];
+
+      return {
+        'name': p['uid'], // luego lo cambiamos por username
+        'wins': wins,
+        'games': wins + losses,
+      };
+    }).toList();
+
+    setState(() {
+      _mock = temp.take(10).toList(); // top 10
+    });
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -77,16 +100,22 @@ class DashboardScreen extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: const BoxDecoration(shape: BoxShape.circle),
-              child: const Icon(Icons.arrow_back_rounded,
-                  color: _C.onSurface, size: 28),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: _C.onSurface,
+                size: 28,
+              ),
             ),
           ),
           const Spacer(),
-          Text('Clasificaci\u00F3n',
-              style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: _C.onSurface)),
+          Text(
+            'Clasificaci\u00F3n',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: _C.onSurface,
+            ),
+          ),
           const Spacer(),
           const SizedBox(width: 40),
         ],
@@ -105,21 +134,30 @@ class DashboardScreen extends StatelessWidget {
             color: _C.gold.withAlpha(30),
             border: Border.all(color: _C.gold.withAlpha(80), width: 2),
           ),
-          child: const Icon(Icons.emoji_events_rounded,
-              color: _C.gold, size: 38),
+          child: const Icon(
+            Icons.emoji_events_rounded,
+            color: _C.gold,
+            size: 38,
+          ),
         ),
         const SizedBox(height: 10),
-        Text('Top 10 Jugadores',
-            style: GoogleFonts.inter(
-                fontSize: 24,
-                color: _C.onSurface,
-                fontWeight: FontWeight.w800)),
+        Text(
+          'Top 10 Jugadores',
+          style: GoogleFonts.inter(
+            fontSize: 24,
+            color: _C.onSurface,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text('Los mejores de la temporada',
-            style: GoogleFonts.inter(
-                fontSize: 13,
-                color: _C.onSurfaceVar,
-                fontWeight: FontWeight.w500)),
+        Text(
+          'Los mejores de la temporada',
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: _C.onSurfaceVar,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -139,8 +177,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _podiumPlace(
-      Map<String, dynamic> p, int rank, Color color, double h) {
+  Widget _podiumPlace(Map<String, dynamic> p, int rank, Color color, double h) {
     return Column(
       children: [
         Container(
@@ -152,36 +189,45 @@ class DashboardScreen extends StatelessWidget {
             border: Border.all(color: color, width: 2.5),
             boxShadow: [
               BoxShadow(
-                  color: color.withAlpha(40),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3)),
+                color: color.withAlpha(40),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
             ],
           ),
           child: Center(
-            child: Icon(Icons.person_rounded,
-                color: Colors.grey.shade300, size: 26),
+            child: Icon(
+              Icons.person_rounded,
+              color: Colors.grey.shade300,
+              size: 26,
+            ),
           ),
         ),
         const SizedBox(height: 6),
-        Text(p['name'] as String,
-            style: GoogleFonts.inter(
-                fontSize: 11,
-                color: _C.onSurface,
-                fontWeight: FontWeight.w700),
-            overflow: TextOverflow.ellipsis),
-        Text('${p['wins']} victorias',
-            style: GoogleFonts.inter(
-                fontSize: 9,
-                color: _C.onSurfaceVar,
-                fontWeight: FontWeight.w500)),
+        Text(
+          p['name'] as String,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            color: _C.onSurface,
+            fontWeight: FontWeight.w700,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          '${p['wins']} victorias',
+          style: GoogleFonts.inter(
+            fontSize: 9,
+            color: _C.onSurfaceVar,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const SizedBox(height: 6),
         Container(
           width: 88,
           height: h,
           decoration: BoxDecoration(
             color: color.withAlpha(30),
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(16)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             border: Border.all(color: color.withAlpha(60)),
           ),
           child: Column(
@@ -189,11 +235,14 @@ class DashboardScreen extends StatelessWidget {
             children: [
               if (rank == 1)
                 Icon(Icons.emoji_events_rounded, color: color, size: 22),
-              Text('#$rank',
-                  style: GoogleFonts.inter(
-                      fontSize: 20,
-                      color: color,
-                      fontWeight: FontWeight.w800)),
+              Text(
+                '#$rank',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ],
           ),
         ),
@@ -208,9 +257,10 @@ class DashboardScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 12,
-              offset: const Offset(0, 4)),
+            color: Colors.black.withAlpha(8),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -219,37 +269,55 @@ class DashboardScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
             color: Colors.white.withAlpha(100),
-            child: Row(children: [
-              SizedBox(
+            child: Row(
+              children: [
+                SizedBox(
                   width: 30,
-                  child: Text('#',
-                      style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: _C.onSurfaceVar,
-                          fontWeight: FontWeight.w600))),
-              Expanded(
-                  child: Text('Jugador',
-                      style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: _C.onSurfaceVar,
-                          fontWeight: FontWeight.w600))),
-              SizedBox(
+                  child: Text(
+                    '#',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: _C.onSurfaceVar,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'Jugador',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: _C.onSurfaceVar,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SizedBox(
                   width: 60,
-                  child: Text('Wins',
-                      style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: _C.onSurfaceVar,
-                          fontWeight: FontWeight.w600),
-                      textAlign: TextAlign.center)),
-              SizedBox(
+                  child: Text(
+                    'Wins',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: _C.onSurfaceVar,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                SizedBox(
                   width: 55,
-                  child: Text('Total',
-                      style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: _C.onSurfaceVar,
-                          fontWeight: FontWeight.w600),
-                      textAlign: TextAlign.center)),
-            ]),
+                  child: Text(
+                    'Total',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: _C.onSurfaceVar,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
           ),
           Divider(color: _C.onSurfaceVar.withAlpha(25), height: 1),
           ...List.generate(_mock.length, (i) => _row(i + 1, _mock[i])),
@@ -284,8 +352,8 @@ class DashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: rowBg,
         border: Border(
-            bottom:
-                BorderSide(color: _C.onSurfaceVar.withAlpha(15), width: 0.5)),
+          bottom: BorderSide(color: _C.onSurfaceVar.withAlpha(15), width: 0.5),
+        ),
       ),
       child: Row(
         children: [
@@ -300,17 +368,24 @@ class DashboardScreen extends StatelessWidget {
                       color: rc.withAlpha(30),
                     ),
                     child: Center(
-                        child: Text('$rank',
-                            style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: rc,
-                                fontWeight: FontWeight.w700))),
+                      child: Text(
+                        '$rank',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: rc,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
                   )
-                : Text('$rank',
+                : Text(
+                    '$rank',
                     style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: _C.onSurfaceVar,
-                        fontWeight: FontWeight.w600)),
+                      fontSize: 14,
+                      color: _C.onSurfaceVar,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
           ),
           Expanded(
             child: Row(
@@ -322,23 +397,33 @@ class DashboardScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: _C.primary.withAlpha(25),
                   ),
-                  child: Icon(Icons.person_rounded,
-                      color: _C.primary.withAlpha(120), size: 16),
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: _C.primary.withAlpha(120),
+                    size: 16,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(p['name'] as String,
-                          style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: _C.onSurface,
-                              fontWeight: FontWeight.w600),
-                          overflow: TextOverflow.ellipsis),
-                      Text('$pct% win rate',
-                          style: GoogleFonts.inter(
-                              fontSize: 10, color: _C.onSurfaceVar)),
+                      Text(
+                        p['name'] as String,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: _C.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '$pct% win rate',
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: _C.onSurfaceVar,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -347,19 +432,23 @@ class DashboardScreen extends StatelessWidget {
           ),
           SizedBox(
             width: 60,
-            child: Text('${p['wins']}',
-                style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: _C.btnColor,
-                    fontWeight: FontWeight.w700),
-                textAlign: TextAlign.center),
+            child: Text(
+              '${p['wins']}',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: _C.btnColor,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
           SizedBox(
             width: 55,
-            child: Text('${p['games']}',
-                style: GoogleFonts.inter(
-                    fontSize: 14, color: _C.onSurfaceVar),
-                textAlign: TextAlign.center),
+            child: Text(
+              '${p['games']}',
+              style: GoogleFonts.inter(fontSize: 14, color: _C.onSurfaceVar),
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ),
