@@ -97,7 +97,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   void _goToResults() {
     if (!mounted) return;
-    final game = context.read<GameController>().currentGame!;
+
+    final gameCtrl = context.read<GameController>();
+    final game = gameCtrl.currentGame!;
     final auth = context.read<AuthController>();
     final userId = auth.currentUser?.uid ?? '';
     final isX = game.xPlayer == userId;
@@ -111,12 +113,18 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       result = 'lose';
     }
 
+    final opponentName = isX ? gameCtrl.oPlayerName : gameCtrl.xPlayerName;
+    final myPfp = isX ? gameCtrl.xPlayerPfpUrl : gameCtrl.oPlayerPfpUrl;
+    final opponentPfp = isX ? gameCtrl.oPlayerPfpUrl : gameCtrl.xPlayerPfpUrl;
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => ResultsScreen(
           result: result,
           playerName: auth.currentUser?.username ?? 'Jugador 1',
-          opponentName: 'aa', //TODO: agregar nombre oponente
+          opponentName: opponentName,
+          playerPhotoUrl: myPfp,
+          opponentPhotoUrl: opponentPfp, //TODO: agregar nombre oponente
         ),
       ),
     );
