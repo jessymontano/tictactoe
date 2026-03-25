@@ -266,12 +266,28 @@ class GameController extends ChangeNotifier {
     }
 
     //convert to list
-    List<Map<String, dynamic>> leaderboard = stats.values.map((player) {
+    List<Map<String, dynamic>> leaderboard = [];
+
+    for (var player in stats.values) {
       int wins = player['wins'];
       int losses = player['losses'];
+      String uid = player['uid'];
 
-      return {'uid': player['uid'], 'wins': wins, 'losses': losses};
-    }).toList();
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+
+      String username = 'Jugador';
+
+      if (userDoc.exists) {
+        username = userDoc.data()?['username'] ?? 'Jugador';
+      }
+
+      leaderboard.add({
+        'uid': uid,
+        'name': username,
+        'wins': wins,
+        'losses': losses,
+      });
+    }
 
     leaderboard.sort((a, b) => b['wins'].compareTo(a['wins']));
 

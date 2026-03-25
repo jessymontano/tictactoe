@@ -74,8 +74,15 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       if (game.winner != 'draw') {
         _winLine = _findWinLine(board, game.winner);
       }
+
+      if (!mounted) return;
       setState(() {});
-      Future.delayed(const Duration(milliseconds: 1500), _goToResults);
+
+      setState(() {});
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        _goToResults();
+      });
     }
   }
 

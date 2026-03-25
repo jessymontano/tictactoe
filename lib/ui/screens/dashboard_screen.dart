@@ -77,15 +77,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final wins = p['wins'];
       final losses = p['losses'];
 
-      return {
-        'name': p['uid'], // luego lo cambiamos por username
-        'wins': wins,
-        'games': wins + losses,
-      };
+      return {'name': p['name'], 'wins': wins, 'games': wins + losses};
     }).toList();
 
     setState(() {
-      _mock = temp.take(10).toList(); // top 10
+      _mock = temp.take(10).toList(); //top ten
     });
   }
 
