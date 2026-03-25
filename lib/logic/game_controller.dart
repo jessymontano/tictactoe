@@ -119,6 +119,23 @@ class GameController extends ChangeNotifier {
 
     String nextTurn = shape == 'x' ? 'o' : 'x';
 
+    if (_gameSubscription == null) {
+      _currentGame = GameModel(
+        id: _currentGame!.id,
+        xPlayer: _currentGame!.xPlayer,
+        oPlayer: _currentGame!.oPlayer,
+        state: newState,
+        gamemode: _currentGame!.gamemode,
+        turn: nextTurn,
+        winner: winner,
+        board: List<String>.from(_currentGame!.board),
+        xQueue: List<int>.from(_currentGame!.xQueue),
+        oQueue: List<int>.from(_currentGame!.oQueue),
+      );
+      notifyListeners();
+      return;
+    }
+
     await _firestore.collection('games').doc(_currentGame!.id).update({
       'board': _currentGame!.board,
       'state': newState,

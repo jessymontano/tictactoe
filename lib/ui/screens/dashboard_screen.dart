@@ -1,6 +1,21 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tictactoe/ui/theme/app_theme.dart';
+
+class _C {
+  static const bg = Color(0xFFE6E6E6);
+  static const primary = Color(0xFF7F95BC);
+  static const accentPink = Color(0xFFB86A8C);
+  static const accentGreen = Color(0xFF9ED3A5);
+  static const tertiary = Color(0xFF9B7BB5);
+  static const onSurface = Color(0xFF333333);
+  static const onSurfaceVar = Color(0xFF666666);
+  static const btnColor = Color(0xFF715867);
+  static const gold = Color(0xFFFFA726);
+  static const silver = Color(0xFF90A4AE);
+  static const bronze = Color(0xFFCD7F32);
+}
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -21,215 +36,378 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.pGradient),
-        child: SafeArea(
-          child: Column(children: [
-            _appBar(context),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(children: [
-                  const SizedBox(height: 16),
-                  const Icon(Icons.emoji_events_rounded,
-                      color: Color(0xFFFFA726), size: 52),
-                  const SizedBox(height: 8),
-                  Text('Top 10 Jugadores',
-                      style: GoogleFonts.inter(
-                          fontSize: 28,
-                          color: AppColors.pPurpleDeep,
-                          fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 24),
-                  _podium(),
-                  const SizedBox(height: 24),
-                  _table(),
-                  const SizedBox(height: 24),
-                ]),
-              ),
+      body: Stack(
+        children: [
+          Container(color: _C.bg),
+          Positioned.fill(child: CustomPaint(painter: _BgPainter())),
+          SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(children: [
+                      const SizedBox(height: 12),
+                      _buildTrophy(),
+                      const SizedBox(height: 20),
+                      _buildPodium(),
+                      const SizedBox(height: 20),
+                      _buildTable(),
+                      const SizedBox(height: 24),
+                    ]),
+                  ),
+                ),
+              ],
             ),
-          ]),
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _appBar(BuildContext context) {
+  Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Row(children: [
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: AppTheme.circleButton,
-            child: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: AppColors.pPurpleDeep, size: 18),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: const Icon(Icons.arrow_back_rounded,
+                  color: _C.onSurface, size: 28),
+            ),
           ),
-        ),
-        const Spacer(),
-        Text('Clasificaci\u00F3n',
-            style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.pTextDark)),
-        const Spacer(),
-        const SizedBox(width: 44),
-      ]),
+          const Spacer(),
+          Text('Clasificaci\u00F3n',
+              style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: _C.onSurface)),
+          const Spacer(),
+          const SizedBox(width: 40),
+        ],
+      ),
     );
   }
 
-  Widget _podium() {
+  Widget _buildTrophy() {
+    return Column(
+      children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _C.gold.withAlpha(30),
+            border: Border.all(color: _C.gold.withAlpha(80), width: 2),
+          ),
+          child: const Icon(Icons.emoji_events_rounded,
+              color: _C.gold, size: 38),
+        ),
+        const SizedBox(height: 10),
+        Text('Top 10 Jugadores',
+            style: GoogleFonts.inter(
+                fontSize: 24,
+                color: _C.onSurface,
+                fontWeight: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text('Los mejores de la temporada',
+            style: GoogleFonts.inter(
+                fontSize: 13,
+                color: _C.onSurfaceVar,
+                fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  Widget _buildPodium() {
     if (_mock.length < 3) return const SizedBox();
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        _podiumPlace(_mock[1], 2, AppColors.pBlue, 90),
-        const SizedBox(width: 10),
-        _podiumPlace(_mock[0], 1, const Color(0xFFFFA726), 115),
-        const SizedBox(width: 10),
-        _podiumPlace(_mock[2], 3, AppColors.pPink, 75),
+        _podiumPlace(_mock[1], 2, _C.silver, 80),
+        const SizedBox(width: 8),
+        _podiumPlace(_mock[0], 1, _C.gold, 100),
+        const SizedBox(width: 8),
+        _podiumPlace(_mock[2], 3, _C.bronze, 65),
       ],
     );
   }
 
   Widget _podiumPlace(
       Map<String, dynamic> p, int rank, Color color, double h) {
-    return Column(children: [
-      Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color.withAlpha(30),
-          border: Border.all(color: color, width: 3),
-          boxShadow: [
-            BoxShadow(
-                color: color.withAlpha(40),
-                blurRadius: 10,
-                offset: const Offset(0, 3)),
-          ],
-        ),
-        child: Center(
-            child: Text('$rank',
-                style: GoogleFonts.inter(
-                    fontSize: 22, color: color, fontWeight: FontWeight.bold))),
-      ),
-      const SizedBox(height: 6),
-      Text(p['name'] as String,
-          style: GoogleFonts.inter(
-              fontSize: 12,
-              color: AppColors.pTextDark,
-              fontWeight: FontWeight.w600),
-          overflow: TextOverflow.ellipsis),
-      Text('${p['wins']} victorias',
-          style: GoogleFonts.inter(fontSize: 10, color: AppColors.pTextMid)),
-      const SizedBox(height: 6),
-      Container(
-        width: 92,
-        height: h,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [color.withAlpha(60), color.withAlpha(20)],
+    return Column(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            border: Border.all(color: color, width: 2.5),
+            boxShadow: [
+              BoxShadow(
+                  color: color.withAlpha(40),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3)),
+            ],
           ),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-          border: Border.all(color: color.withAlpha(80)),
+          child: Center(
+            child: Icon(Icons.person_rounded,
+                color: Colors.grey.shade300, size: 26),
+          ),
         ),
-        child: Center(
-            child: Text('#$rank',
-                style: GoogleFonts.inter(
-                    fontSize: 22,
-                    color: color,
-                    fontWeight: FontWeight.w700))),
-      ),
-    ]);
-  }
-
-  Widget _table() {
-    return Container(
-      decoration: AppTheme.pastelCard(),
-      clipBehavior: Clip.antiAlias,
-      child: Column(children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: Row(children: [
-            _colHead('#', 30),
-            Expanded(child: _colHead('Jugador', null)),
-            _colHead('Victorias', 65),
-            _colHead('Partidas', 60),
-          ]),
+        const SizedBox(height: 6),
+        Text(p['name'] as String,
+            style: GoogleFonts.inter(
+                fontSize: 11,
+                color: _C.onSurface,
+                fontWeight: FontWeight.w700),
+            overflow: TextOverflow.ellipsis),
+        Text('${p['wins']} victorias',
+            style: GoogleFonts.inter(
+                fontSize: 9,
+                color: _C.onSurfaceVar,
+                fontWeight: FontWeight.w500)),
+        const SizedBox(height: 6),
+        Container(
+          width: 88,
+          height: h,
+          decoration: BoxDecoration(
+            color: color.withAlpha(30),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(16)),
+            border: Border.all(color: color.withAlpha(60)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (rank == 1)
+                Icon(Icons.emoji_events_rounded, color: color, size: 22),
+              Text('#$rank',
+                  style: GoogleFonts.inter(
+                      fontSize: 20,
+                      color: color,
+                      fontWeight: FontWeight.w800)),
+            ],
+          ),
         ),
-        Divider(color: AppColors.pTextLight.withAlpha(60), height: 1),
-        ...List.generate(_mock.length, (i) => _row(i + 1, _mock[i])),
-      ]),
+      ],
     );
   }
 
-  Widget _colHead(String text, double? width) {
-    final w = Text(text,
-        style: GoogleFonts.inter(
-            fontSize: 12,
-            color: AppColors.pTextMid,
-            fontWeight: FontWeight.w600),
-        textAlign: TextAlign.center);
-    return width != null ? SizedBox(width: width, child: w) : w;
+  Widget _buildTable() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(180),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withAlpha(8),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+            color: Colors.white.withAlpha(100),
+            child: Row(children: [
+              SizedBox(
+                  width: 30,
+                  child: Text('#',
+                      style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: _C.onSurfaceVar,
+                          fontWeight: FontWeight.w600))),
+              Expanded(
+                  child: Text('Jugador',
+                      style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: _C.onSurfaceVar,
+                          fontWeight: FontWeight.w600))),
+              SizedBox(
+                  width: 60,
+                  child: Text('Wins',
+                      style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: _C.onSurfaceVar,
+                          fontWeight: FontWeight.w600),
+                      textAlign: TextAlign.center)),
+              SizedBox(
+                  width: 55,
+                  child: Text('Total',
+                      style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: _C.onSurfaceVar,
+                          fontWeight: FontWeight.w600),
+                      textAlign: TextAlign.center)),
+            ]),
+          ),
+          Divider(color: _C.onSurfaceVar.withAlpha(25), height: 1),
+          ...List.generate(_mock.length, (i) => _row(i + 1, _mock[i])),
+        ],
+      ),
+    );
   }
 
   Widget _row(int rank, Map<String, dynamic> p) {
     Color rc;
     Color? rowBg;
     if (rank == 1) {
-      rc = const Color(0xFFFFA726);
-      rowBg = AppColors.pYellowBg;
+      rc = _C.gold;
+      rowBg = _C.gold.withAlpha(18);
     } else if (rank == 2) {
-      rc = AppColors.pBlue;
-      rowBg = AppColors.pBlueBg;
+      rc = _C.silver;
+      rowBg = _C.silver.withAlpha(15);
     } else if (rank == 3) {
-      rc = AppColors.pPink;
-      rowBg = AppColors.pPinkBg;
+      rc = _C.bronze;
+      rowBg = _C.bronze.withAlpha(15);
     } else {
-      rc = AppColors.pTextMid;
+      rc = _C.onSurfaceVar;
       rowBg = null;
     }
 
+    final pct = (p['games'] as int) > 0
+        ? ((p['wins'] as int) / (p['games'] as int) * 100).round()
+        : 0;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: rowBg?.withAlpha(120),
+        color: rowBg,
         border: Border(
-            bottom: BorderSide(
-                color: AppColors.pTextLight.withAlpha(30), width: 0.5)),
+            bottom:
+                BorderSide(color: _C.onSurfaceVar.withAlpha(15), width: 0.5)),
       ),
-      child: Row(children: [
-        SizedBox(
+      child: Row(
+        children: [
+          SizedBox(
             width: 30,
-            child: Text('$rank',
-                style: GoogleFonts.inter(
-                    fontSize: 16, color: rc, fontWeight: FontWeight.bold))),
-        Expanded(
-            child: Text(p['name'] as String,
-                style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppColors.pTextDark,
-                    fontWeight: FontWeight.w500))),
-        SizedBox(
-            width: 65,
+            child: rank <= 3
+                ? Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: rc.withAlpha(30),
+                    ),
+                    child: Center(
+                        child: Text('$rank',
+                            style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: rc,
+                                fontWeight: FontWeight.w700))),
+                  )
+                : Text('$rank',
+                    style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: _C.onSurfaceVar,
+                        fontWeight: FontWeight.w600)),
+          ),
+          Expanded(
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _C.primary.withAlpha(25),
+                  ),
+                  child: Icon(Icons.person_rounded,
+                      color: _C.primary.withAlpha(120), size: 16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(p['name'] as String,
+                          style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: _C.onSurface,
+                              fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis),
+                      Text('$pct% win rate',
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: _C.onSurfaceVar)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 60,
             child: Text('${p['wins']}',
                 style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: AppColors.pPurpleDeep,
+                    color: _C.btnColor,
                     fontWeight: FontWeight.w700),
-                textAlign: TextAlign.center)),
-        SizedBox(
-            width: 60,
+                textAlign: TextAlign.center),
+          ),
+          SizedBox(
+            width: 55,
             child: Text('${p['games']}',
                 style: GoogleFonts.inter(
-                    fontSize: 14, color: AppColors.pTextMid),
-                textAlign: TextAlign.center)),
-      ]),
+                    fontSize: 14, color: _C.onSurfaceVar),
+                textAlign: TextAlign.center),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class _BgPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rng = Random(77);
+    final symbols = ['X', 'O', '#'];
+    final colors = [
+      _C.primary.withAlpha(22),
+      _C.accentPink.withAlpha(22),
+      _C.accentGreen.withAlpha(25),
+      _C.onSurfaceVar.withAlpha(12),
+    ];
+
+    for (int i = 0; i < 30; i++) {
+      final x = rng.nextDouble() * size.width;
+      final y = rng.nextDouble() * size.height;
+      final symbol = symbols[rng.nextInt(symbols.length)];
+      final color = colors[rng.nextInt(colors.length)];
+      final fontSize = 16.0 + rng.nextDouble() * 26;
+      final angle = (rng.nextDouble() - 0.5) * 0.6;
+
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(angle);
+
+      final tp = TextPainter(
+        text: TextSpan(
+          text: symbol,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w800,
+            color: color,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
+
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

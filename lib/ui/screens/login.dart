@@ -94,15 +94,21 @@ class _LoginScreenState extends State<LoginScreen>
                           child: Column(
                             children: [
                               _buildFeatureCard(
-                                Icons.camera_alt_rounded,
-                                'Foto como ficha',
-                                'Usa tu cara como X u O',
+                                Icons.all_inclusive_rounded,
+                                'Modo Sin Fin',
+                                'Tus fichas se borran hasta lograr 3 en l\u00EDnea',
                               ),
                               const SizedBox(height: 12),
                               _buildFeatureCard(
                                 Icons.calculate_rounded,
                                 'Reto matem\u00e1tico',
                                 'Resuelve para colocar tu ficha',
+                              ),
+                              const SizedBox(height: 12),
+                              _buildFeatureCard(
+                                Icons.camera_alt_rounded,
+                                'Foto como ficha',
+                                'Usa tu cara como X u O',
                               ),
                             ],
                           ),
