@@ -355,20 +355,58 @@ class _AuthSheetState extends State<_AuthSheet> {
 
   String? _valUser(String? v) {
     if (v == null || v.trim().isEmpty) return 'Ingresa tu nombre de usuario';
+
+    final value = v.trim();
+
+    if (value.length < 3) return 'Mínimo 3 caracteres';
+    if (value.length > 20) return 'Máximo 20 caracteres';
+
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+      return 'Solo letras, números y _';
+    }
+
+    if (value.startsWith('_') || value.endsWith('_')) {
+      return 'No puede iniciar o terminar con _';
+    }
+
     return null;
   }
 
   String? _valEmail(String? v) {
     if (v == null || v.trim().isEmpty) return 'Ingresa tu correo';
-    if (!RegExp(r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
-      return 'Correo no v\u00e1lido';
+
+    final value = v.trim();
+
+    if (value.length > 50) return 'Correo demasiado largo';
+
+    if (!RegExp(r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,}$').hasMatch(value)) {
+      return 'Correo no válido';
     }
+
+    if (value.contains(' ')) {
+      return 'No debe contener espacios';
+    }
+
     return null;
   }
 
   String? _valPass(String? v) {
-    if (v == null || v.isEmpty) return 'Ingresa tu contrase\u00f1a';
-    if (v.length < 6) return 'M\u00ednimo 6 caracteres';
+    if (v == null || v.isEmpty) return 'Ingresa tu contraseña';
+
+    if (v.length < 8) return 'Mínimo 8 caracteres';
+
+    if (!RegExp(r'[A-Z]').hasMatch(v)) {
+      return 'Debe tener al menos 1 mayúscula';
+    }
+
+    if (!RegExp(r'[a-z]').hasMatch(v)) {
+      return 'Debe tener al menos 1 minúscula';
+    }
+
+    if (!RegExp(r'[0-9]').hasMatch(v)) {
+      return 'Debe tener al menos 1 número';
+    }
+
     return null;
   }
 
@@ -591,6 +629,7 @@ class _AuthSheetState extends State<_AuthSheet> {
           controller: controller,
           keyboardType: keyboard,
           validator: validator,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
           decoration: InputDecoration(
             hintText: hint,
