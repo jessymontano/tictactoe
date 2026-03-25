@@ -2,7 +2,7 @@ name: tictactoe
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.1
 
 environment:
   sdk: ^3.11.0
@@ -33,3 +33,8 @@ flutter:
 
   assets:
     - assets/images/
+  
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf
