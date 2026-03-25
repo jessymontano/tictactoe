@@ -1,6 +1,6 @@
 # tictactoe
 
-# app_pds
+
 
 Aplicación desarrollada en Flutter que permite jugar Tic Tac Toe en línea en tiempo real con hasta tres modos de juego.
 Desarrollada para la materia de Practicas de Desarrollo de Sistemas III (Programacion Movil)
@@ -29,21 +29,21 @@ Tecnologias:
 Imagenes:
 
 <p align="center">
-  <img src="assets/images/1.jpeg" width="220"/>
-  <img src="assets/images/2.jpeg" width="220"/>
-  <img src="assets/images/4.jpeg" width="220"/>
-  <img src="assets/images/5.jpeg" width="220"/>
+  <img src="assets/images/1.jpeg" width="200"/>
+  <img src="assets/images/2.jpeg" width="200"/>
+  <img src="assets/images/4.jpeg" width="200"/>
 </p>
 
 <p align="center">
-  <img src="assets/images/6.jpeg" width="220"/>
-  <img src="assets/images/7.jpeg" width="220"/>
-  <img src="assets/images/8.jpeg" width="220"/>
+  <img src="assets/images/5.jpeg" width="200"/>
+  <img src="assets/images/6.jpeg" width="200"/>
+  <img src="assets/images/7.jpeg" width="200"/>
 </p>
 
 <p align="center">
-  <img src="assets/images/9.jpeg" width="220"/>
-  <img src="assets/images/10.jpeg" width="220"/>
+  <img src="assets/images/8.jpeg" width="200"/>
+  <img src="assets/images/9.jpeg" width="200"/>
+  <img src="assets/images/10.jpeg" width="200"/>
 </p>
 
 
