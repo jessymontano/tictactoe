@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:tictactoe/logic/auth_controller.dart';
+import 'package:tictactoe/logic/game_controller.dart';
 import 'package:tictactoe/ui/screens/login.dart';
+import 'package:tictactoe/ui/screens/lobby.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -14,7 +16,10 @@ void main() async {
 
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthController())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthController()),
+        ChangeNotifierProvider(create: (_) => GameController()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -35,11 +40,10 @@ class MyApp extends StatelessWidget {
 
             context.read<AuthController>().loadCurrentSession(firebaseUser.uid);
 
-            // TODO: poner pantalla principal aquí
+            return const LobbyScreen();
           }
 
-          // si no hay sesión ir a pantalla de inicio de sesión
-          return LoginScreen();
+          return const LoginScreen();
         },
       ),
     );

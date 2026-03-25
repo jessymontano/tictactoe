@@ -12,6 +12,20 @@ class GameController extends ChangeNotifier {
 
   GameModel? get currentGame => _currentGame;
 
+  void startLocalGame(
+      String roomCode, String xPlayer, String oPlayer, String gameMode) {
+    _gameSubscription?.cancel();
+    _currentGame = GameModel(
+      id: roomCode,
+      xPlayer: xPlayer,
+      oPlayer: oPlayer,
+      state: 'playing',
+      gamemode: gameMode,
+      board: List.filled(9, ''),
+    );
+    notifyListeners();
+  }
+
   Future<void> createRoom(
     String roomCode,
     String userId,
@@ -83,18 +97,13 @@ class GameController extends ChangeNotifier {
   }
 
   Future<void> makeMove(int index, String userId) async {
-    // regresar si el juego no ha empezado
     if (_currentGame == null || _currentGame!.state != 'playing') return;
 
     String shape = _currentGame!.xPlayer == userId ? 'x' : 'o';
 
-    // regresar si no es turno del jugador
     if (_currentGame!.turn != shape) return;
-
-    // regresar si la celda no está vacía
     if (_currentGame!.board[index] != '') return;
 
-    // agregar movimiento a la cola de los jugadores
     _currentGame!.registerMove(index, shape);
 
     String newState = 'playing';
